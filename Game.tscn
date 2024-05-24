@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Link.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Game.gd" type="Script" id=2]
+[ext_resource path="res://GameMap.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Oktorok.tscn" type="PackedScene" id=4]
+
+[node name="Game" type="Node2D"]
+script = ExtResource( 2 )
+
+[node name="Camera2D" type="Camera2D" parent="."]
+current = true
+
+[node name="GameMap" parent="." instance=ExtResource( 3 )]
+position = Vector2( -128, -88 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="Link" parent="GameMap" instance=ExtResource( 1 )]
+position = Vector2( 128, 88 )
+
+[node name="Oktorok" parent="GameMap" instance=ExtResource( 4 )]
+position = Vector2( 184, 56 )
