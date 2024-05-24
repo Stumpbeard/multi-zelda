@@ -48,10 +48,7 @@ remotesync func die():
 	state = State.despawned
 	$CollisionShape2D.set_deferred("disabled", true)
 	global_position = Vector2(-50000, -50000)
-	
-func _physics_process(_delta):
-	if is_network_master() && !get_tree().is_network_server():
-		rpc_id(1, "sync_data", serialized())
+
 
 func serialized():
 	return {
