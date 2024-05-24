@@ -56,7 +56,7 @@ func _physics_process(_delta):
 	if Input.is_action_just_pressed("primary"):
 		player.attack()
 	
-	if is_network_master():
+	if get_tree().is_network_server():
 		for enemy in get_tree().get_nodes_in_group("enemies"):
 			enemy.ai()
 			
