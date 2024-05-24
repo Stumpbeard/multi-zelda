@@ -23,7 +23,7 @@ func die():
 func _on_RespawnTimer_timeout():
 	spawn()
 
-func shoot_rock():
+remotesync func shoot_rock():
 	var rock = load("res://Rock.tscn").instance()
 	get_parent().add_child_below_node(self, rock, true)
 	rock.position = position
@@ -59,7 +59,6 @@ func ai():
 			2:
 				wander_direction = Vector2()
 			3:
-				shoot_rock()
+				rpc("shoot_rock")
 		$DecisionTimer.start(1.0)
 	move(wander_direction)
-				

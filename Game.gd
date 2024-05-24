@@ -1,31 +1,44 @@
 extends Node2D
 
-var port = 6161
+var port = 6969
 var server = "0.0.0.0"
 
 var player
 
 func _ready():
 	randomize()
-	player = $GameMap/Link
+	player = get_node("GameMap/Link")
 	var peer
 	if OS.get_name() == "HTML5":
 		peer = WebSocketClient.new()
 		connect_network_signals(peer)
 		peer.connect_to_url("%s:%s" % [server, port], [], true)
-		yield(peer, "connection_succeeded")
 	else:
 		peer = WebSocketServer.new()
 		connect_network_signals(peer)
 		peer.listen(port, [], true)
+		player.name = "1"
 	get_tree().network_peer = peer
-	player.name = str(get_tree().get_network_unique_id())
 	
 func connect_network_signals(peer: NetworkedMultiplayerPeer):
-	peer.connect("peer_connected", self, "_peer_connected")
+	var _err = peer.connect("peer_connected", self, "_peer_connected")
+	_err = peer.connect("connection_succeeded", self, "_connection_succeeded")
+	
+func _connection_succeeded():
+	var id = get_tree().get_network_unique_id()
+	player.name = str(id)
+	player.set_network_master(id)
 	
 func _peer_connected(id):
 	print("%s connected successfully" % [id])
+	var new_player = get_node_or_null("GameMap/%s" % [id])
+	if !new_player:
+		new_player = load("res://Link.tscn").instance()
+		new_player.position = Vector2(128, 88)
+		new_player.name = str(id)
+		$GameMap.add_child(new_player)
+		new_player.set_network_master(id)
+		
 
 func _physics_process(_delta):
 	var direction = Vector2()
@@ -43,5 +56,6 @@ func _physics_process(_delta):
 	if Input.is_action_just_pressed("primary"):
 		player.attack()
 	
-	for enemy in get_tree().get_nodes_in_group("enemies"):
-		enemy.ai()
+	if is_network_master():
+		for enemy in get_tree().get_nodes_in_group("enemies"):
+			enemy.ai()

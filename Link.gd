@@ -5,7 +5,7 @@ func _ready():
 	spawn()
 	
 func spawn():
-	global_position = origin
+	global_position = Vector2(origin)
 	state = State.spawning
 	var tween = create_tween()
 	tween.set_loops(5)
@@ -34,20 +34,12 @@ func move(direction):
 
 	if direction.y > 0:
 		$SwordCollision.rotation_degrees = 0
-		$SwordCollision.position = Vector2()
 	elif direction.y < 0:
 		$SwordCollision.rotation_degrees = 180
-		$SwordCollision.position = Vector2(-1, -1)
 	if direction.x > 0:
 		$SwordCollision.rotation_degrees = -90
-		$SwordCollision.position = Vector2(0, 2)
 	elif direction.x < 0:
 		$SwordCollision.rotation_degrees = 90
-		$SwordCollision.position = Vector2(0, 2)
-		
-	var collision = get_last_slide_collision()
-	if collision && collision.collider.is_in_group("enemies"):
-		die()
 		
 func die():
 	.die()
@@ -56,3 +48,23 @@ func die():
 
 func _on_RespawnTimer_timeout():
 	spawn()
+
+func serialized():
+	return {
+		"x": position.x,
+		"y": position.y,
+		"animation": $AnimatedSprite.animation,
+		"playing": $AnimatedSprite.playing,
+		"state": state,
+		"sword_disabled": $SwordCollision/CollisionShape2D.disabled,
+		"sword_rotation": $SwordCollision.rotation_degrees
+	}
+	
+remote func sync_data(data):
+	position.x = data.get("x", 0)
+	position.y = data.get("y", 0)
+	$AnimatedSprite.animation = data.get("animation", "forward")
+	$AnimatedSprite.playing = data.get("playing", true)
+	state = data.get("state", State.ready)
+	$SwordCollision/CollisionShape2D.disabled = data.get("sword_disabled", true)
+	$SwordCollision.rotation_degrees = data.get("sword_rotation", 0)
