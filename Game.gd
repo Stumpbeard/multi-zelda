@@ -5,15 +5,10 @@ var server = "0.0.0.0"
 
 var player
 
-var input_maps = {
-	1: {
-		"up": false,
-		"down": false,
-		"left": false,
-		"right": false,
-		"primary": false
-	}
-}
+var tick = 0
+var input_maps = {}
+
+var input_history = []
 
 func _ready():
 	randomize()
@@ -50,20 +45,22 @@ func _peer_connected(id):
 		new_player.set_network_master(id)
 		
 
-func _physics_process(_delta):
+func _physics_process(delta):
+	tick += 1
 	var input_map = {
 		"up": Input.is_action_pressed("up"),
 		"down": Input.is_action_pressed("down"),
 		"left": Input.is_action_pressed("left"),
 		"right": Input.is_action_pressed("right"),
-		"primary": Input.is_action_just_pressed("primary")
+		"primary": Input.is_action_just_pressed("primary"),
+		"tick": tick
 	}
 	
 	if !get_tree().is_network_server():
 		rpc_id(1, "send_input_map", input_map)
-		return
-	else:
-		input_maps[1] = input_map
+		input_history.append(input_map)
+	
+	input_maps[get_tree().get_network_unique_id()] = input_map
 	
 	for id in input_maps:
 		input_map = input_maps.get(id)
@@ -71,31 +68,37 @@ func _physics_process(_delta):
 		if !character || !input_map:
 			continue
 		
-		var direction = Vector2()
-		if input_map.get("right"):
-			direction.x += 1
-		if input_map.get("left"):
-			direction.x -= 1
-		if input_map.get("down"):
-			direction.y += 1
-		if input_map.get("up"):
-			direction.y -= 1
+		execute_input(character, input_map)
 			
-		character.move(direction.normalized())
-		
-		if input_map.get("primary"):
-			character.attack()
-		
+		character.last_tick = input_map.tick
+
 	if get_tree().is_network_server():
 		for enemy in get_tree().get_nodes_in_group("enemies"):
 			enemy.ai()
-			
-	if get_tree().is_network_server():
+
 		var units_to_sync = {}
 		for unit in get_tree().get_nodes_in_group("syncables"):
-			units_to_sync[unit.name] = unit.serialized()
+			var data = unit.serialized()
+			data.tick = unit.last_tick
+			units_to_sync[unit.name] = data
 		rpc("sync_all_units", units_to_sync)
 		
+func execute_input(character, input_map):
+	var direction = Vector2()
+	if input_map.get("right"):
+		direction.x += 1
+	if input_map.get("left"):
+		direction.x -= 1
+	if input_map.get("down"):
+		direction.y += 1
+	if input_map.get("up"):
+		direction.y -= 1
+		
+	character.move(direction.normalized())
+	
+	if input_map.get("primary"):
+		character.attack()
+
 remote func send_input_map(input_map):
 	input_maps[get_tree().get_rpc_sender_id()] = input_map
 
@@ -107,4 +110,14 @@ remote func sync_all_units(units_to_sync):
 			continue
 		unit.sync_data(data)
 		
+		if unit == player && !input_history.empty():
+			var tick = data.tick
+			var frame = input_history[0]
+			while !input_history.empty() && frame.tick <= tick:
+				frame = input_history.pop_front()
+				
+			for input_map in input_history:
+				execute_input(player, input_map)
+		
+	
 		

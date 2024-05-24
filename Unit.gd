@@ -6,6 +6,8 @@ export var speed = 32.0
 enum State { spawning, ready, attacking, despawned }
 var state = State.ready
 
+var last_tick = 0
+
 onready var origin = global_position
 	
 func spawn():
