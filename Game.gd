@@ -59,3 +59,21 @@ func _physics_process(_delta):
 	if is_network_master():
 		for enemy in get_tree().get_nodes_in_group("enemies"):
 			enemy.ai()
+			
+	if get_tree().is_network_server():
+		var units_to_sync = {}
+		for unit in get_tree().get_nodes_in_group("syncables"):
+			units_to_sync[unit.name] = unit.serialized()
+		rpc("sync_all_units", units_to_sync)
+
+remote func sync_all_units(units_to_sync):
+	for id in units_to_sync:
+		if int(id) == get_tree().get_network_unique_id():
+			continue # we don't accept syncs about ourselves
+		var data = units_to_sync[id]
+		var unit = get_node_or_null(data.path)
+		if !unit:
+			continue
+		unit.sync_data(data)
+		
+		

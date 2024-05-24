@@ -50,8 +50,8 @@ remotesync func die():
 	global_position = Vector2(-50000, -50000)
 	
 func _physics_process(_delta):
-	if is_network_master():
-		rpc("sync_data", serialized())
+	if is_network_master() && !get_tree().is_network_server():
+		rpc_id(1, "sync_data", serialized())
 
 func serialized():
 	return {
@@ -60,6 +60,7 @@ func serialized():
 		"animation": $AnimatedSprite.animation,
 		"playing": $AnimatedSprite.playing,
 		"state": state,
+		"path": get_path()
 	}
 	
 remote func sync_data(data):

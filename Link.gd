@@ -57,7 +57,8 @@ func serialized():
 		"playing": $AnimatedSprite.playing,
 		"state": state,
 		"sword_disabled": $SwordCollision/CollisionShape2D.disabled,
-		"sword_rotation": $SwordCollision.rotation_degrees
+		"sword_rotation": $SwordCollision.rotation_degrees,
+		"path": get_path()
 	}
 	
 remote func sync_data(data):
